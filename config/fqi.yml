@@ -1,0 +1,16 @@
+method: grid
+metric: 
+  goal : maximize 
+  name : avg_total_reward
+parameters :
+  num_layers :
+    values : [2] 
+  hidden_units : 
+    values : [64]
+  num_iterations :
+    values : [1000]
+  evaluation_episodes :
+    values : [100]
+  gamma :
+    values : [0.99]
+  
