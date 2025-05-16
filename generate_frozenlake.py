@@ -6,7 +6,7 @@ import pickle
 env = gym.make('FrozenLake-v1', desc=None, map_name="8x8", is_slippery=False)
 
 dataset = [] 
-n_episodes = 5000
+n_episodes = 8000
 max_steps = 100 
 
 
