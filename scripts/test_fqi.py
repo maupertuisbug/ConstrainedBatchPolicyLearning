@@ -31,7 +31,7 @@ def run_exp():
     env = gym.make('FrozenLake-v1', desc=None, is_slippery=False)
 
     print("Environment action space: ", env.observation_space.n)
-    input_size = 2
+    input_size = env.observation_space.n + env.action_space.n
     output_size = 1
 
     layers = []

@@ -26,9 +26,16 @@ dataset = []
 
 rewards = [] 
 
+def one_hot(n, state):
+    vec  = np.zeros(n)
+    vec[state] = 1
+    return vec 
+
 for episode in range(episodes):
 
     state = env.reset()
+    state_n = env.observation_space.n 
+    action_n = env.action_space.n
     total_reward = 0 
     done = False
 
@@ -47,8 +54,8 @@ for episode in range(episodes):
 
         q_table[state, action] = old_q_value + alpha * (reward + gamma * next_max - old_q_value)
 
-        if episode > 20000:
-            dataset.append((state, action, next_state, reward, done))
+        if episode > 70000:
+            dataset.append((one_hot(state_n, state), one_hot(action_n, action), one_hot(state_n, next_state), reward, done))
 
         state = next_state 
         total_reward += reward 
@@ -60,6 +67,7 @@ for episode in range(episodes):
     wandb_run.log({"Total Reward" : np.mean(rewards)})
 
 print("Dataset size: ", len(dataset))
+print(dataset[0])
 with open('frozenlake_qldataset.pkl', 'wb') as f:
     pickle.dump(dataset, f)
 print("Dataset saved to frozenlake_qldataset.pkl")

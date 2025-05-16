@@ -8,7 +8,7 @@ parameters :
   hidden_units : 
     values : [64]
   num_iterations :
-    values : [3000]
+    values : [30]
   evaluation_episodes :
     values : [1000]
   gamma :
