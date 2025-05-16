@@ -9,3 +9,4 @@ export CPATH=$CONDA_PREFIX/include
 
 # cd $CONDA_PREFIX/bin
 # ln -s x86_64-conda_cos7-linux-gnu-gcc gcc
+# source anaconda3/etc/profile.d/conda.sh
