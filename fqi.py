@@ -52,7 +52,7 @@ class FQI:
             done = False 
             total_reward = 0
             while not done:
-                q_values = [self.model(torch.cat((torch.tensor(state, dtype=torch.float32).unsqueeze(0), torch.tensor(a, dtype=torch.float32, device=device).unsqueeze(0)), dim=0)).detach().numpy() for a in range(env.action_space.n)]
+                q_values = [self.model(torch.cat((torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0), torch.tensor(a, dtype=torch.float32, device=self.device).unsqueeze(0)), dim=0)).detach().cpu().numpy() for a in range(env.action_space.n)]
                 action = np.argmax(q_values)
                 next_state, reward, done, _ = env.step(action)
                 total_reward += reward

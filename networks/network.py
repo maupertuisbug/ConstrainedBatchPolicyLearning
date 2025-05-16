@@ -27,7 +27,7 @@ class Network(torch.nn.Module):
             self.layers.append(activation_fn)
         print(self.layers)
         self.model = torch.nn.Sequential(*self.layers)
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
 
     def forward(self, x):
         network_output = self.model(x)
