@@ -48,13 +48,15 @@ class FQI:
         done = False
         total_reward = 0
         for episodes in range(self.config.evaluation_episodes):
+            state = env.reset()
+            done = False 
+            total_reward = 0
             while not done:
-                q_values = [self.model(torch.cat((state, a), dim=1)) for a in range(env.action_space.n)]
+                q_values = [self.model(torch.cat((torch.tensor(state, dtype=torch.float32).unsqueeze(0), torch.tensor(a, dtype=torch.float32).unsqueeze(0)), dim=0)).detach().numpy() for a in range(env.action_space.n)]
                 action = np.argmax(q_values)
                 next_state, reward, done, _ = env.step(action)
                 total_reward += reward
                 state = next_state
-            print("Total reward: ", total_reward)
             self.wandb.log({"total_reward": total_reward})
 
         

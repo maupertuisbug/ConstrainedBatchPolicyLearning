@@ -42,6 +42,7 @@ def run_exp():
     print("Layers: ", layers)
 
     model = Network(num_layers+1, layers).to(device)
+    model = model.to(torch.float32)
     fqi = FQI(loaded_dataset, config, model, wandb=wandb_run)
     fqi.train()
     fqi.evaluate()
