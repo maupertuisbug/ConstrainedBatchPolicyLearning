@@ -27,8 +27,44 @@ class Network(torch.nn.Module):
             self.layers.append(activation_fn)
         print(self.layers)
         self.model = torch.nn.Sequential(*self.layers)
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
 
     def forward(self, x):
         network_output = self.model(x)
         return network_output
+
+    def get_best_action(self, x):
+        actions  = []
+        for i in range(env.action_space.n):
+            action = one_hot(action_n, action)
+            network_output = torch.cat((x, action), dim=1)
+            network_output = self.model(network_output)
+            actions.append(network_output)
+        
+        best_action = torch.argmax(values).item()
+        return one_hot(best_action)
+    
+    def get_best_action_batch(self, x):
+
+        batch_size = x.shape[0]
+        n_actions = self.env.action_space.n
+        actions_one_hot = torch.eye(n_actions)
+        
+        x_expanded = x.unsqueeze(1).repeat(1, n_actions, 1)
+        actions_expanded = actions_one_hot.unsqueeze(0).repeat(batch_size, 1, 1)
+
+        input_combined = torch.cat([x_expanded, actions_expanded], dim=-1)
+        input_flat     = input_combined.view(-1, input_combined.shape[-1])
+
+        q_values       = self.model(input_flat)
+        q_values       = q_values.view(batch_size, n_actions)
+
+        best_action_indices = torch.argmax(q_values, dim=1)
+        best_actions        = torch.nn.functional.one_hot(best_action_indices, num_classes=n_actions).float32()
+
+        return best_actions
+
+
+    
+
+        

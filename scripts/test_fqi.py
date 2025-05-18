@@ -11,27 +11,27 @@ from fqi import FQI
 
 def run_exp():
     # Initialize wandb
-    wandb_run = wandb.init(project="fitted q-function")
+    wandb_run = wandb.init(project="fitted q_function")
     config = wandb.config
 
     # Set device
-    device = torch.device("cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Device being used ", device)
 
     num_layers = config.num_layers
     hidden_units = config.hidden_units
 
         
-    with open('frozenlake_dataset.pkl', 'rb') as f:
+    with open('frozenlake_qldataset.pkl', 'rb') as f:
         loaded_dataset = pickle.load(f)
     print("Loaded dataset size: ", len(loaded_dataset))
     print("First 5 samples of loaded dataset: ", loaded_dataset[:5])
 
     # Your frozen lake does not have an obervation space that is a box
-    env = gym.make('FrozenLake-v1', desc=None, map_name="8x8", is_slippery=False)
+    env = gym.make('FrozenLake-v1', desc=None, is_slippery=False)
 
     print("Environment action space: ", env.observation_space.n)
-    input_size = 2
+    input_size = env.observation_space.n + env.action_space.n
     output_size = 1
 
     layers = []
@@ -57,6 +57,6 @@ if __name__ == "__main__":
     config = OmegaConf.load(args.config)
     config_dict = OmegaConf.to_container(config, resolve=True)
 
-    project_name = "fitted q-function"
+    project_name = "fitted q_function"
     sweep_id = wandb.sweep(sweep=config_dict, project=project_name)
     agent = wandb.agent(sweep_id, function=run_exp, count = 5)

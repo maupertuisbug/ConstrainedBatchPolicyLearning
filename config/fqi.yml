@@ -3,14 +3,26 @@ metric:
   goal : maximize 
   name : avg_total_reward
 parameters :
-  num_layers :
-    values : [2] 
-  hidden_units : 
+  q1_num_layers :
+    values : [1] 
+  q1_hidden_units : 
+    values : [64]
+  q2_num_layers :
+    values : [1] 
+  q2_hidden_units : 
+    values : [64]
+  q3_num_layers :
+    values : [1] 
+  q3_hidden_units : 
+    values : [64]
+  q4_num_layers :
+    values : [1] 
+  q4_hidden_units : 
     values : [64]
   num_iterations :
-    values : [1000]
+    values : [30]
   evaluation_episodes :
-    values : [100]
+    values : [1000]
   gamma :
     values : [0.99]
   
