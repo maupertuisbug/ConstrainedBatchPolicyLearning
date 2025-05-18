@@ -1,10 +1,12 @@
 import torch 
 import numpy as np 
+import copy
 
+from networks.network import Network
+from cbpl.fqe import FQE
+from cbpl.fqi import FQI
 
-
-
-
+from torch.utils.data import TensorDataset, DataLoader
 
 
 class CBPL:
@@ -12,9 +14,9 @@ class CBPL:
         self.dataset = dataset 
         self.bound = B 
         self.lr = learning_rate 
-        self.lmda = torch.nn.Parameter(torch.full((1,), (B/1+1)))
-        self.env = env
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.lmda = torch.nn.Parameter(torch.full((1,), (B/1+1), dtype=torch.float32, device=self.device))
+        self.env = env
         self.config = config
         self.wandb_run = wandb_run
 
@@ -41,7 +43,7 @@ class CBPL:
             layers1.append([hidden_units, 'relu', hidden_units])
         layers1.append([hidden_units, 'linear', output_size])
 
-        self.q1_policy = Network(num_layers+1, layers1).to(self.device).to(torch.float32)
+        self.q1_policy = Network(num_layers+1, layers1, self.env).to(self.device).to(torch.float32)
 
         layers2 = [] 
         hidden_units = self.config.q2_hidden_units 
@@ -51,7 +53,7 @@ class CBPL:
             layers2.append([hidden_units, 'relu', hidden_units])
         layers2.append([hidden_units, 'linear', output_size])
 
-        self.q2_eval = Network(num_layers+1, layers2).to(self.device).to(torch.float32)
+        self.q2_eval = Network(num_layers+1, layers2, self.env).to(self.device).to(torch.float32)
 
         layers3 = [] 
         hidden_units = self.config.q3_hidden_units 
@@ -61,7 +63,7 @@ class CBPL:
             layers3.append([hidden_units, 'relu', hidden_units])
         layers3.append([hidden_units, 'linear', output_size])
 
-        self.q3_eval = Network(num_layers+1, layers3).to(self.device).to(torch.float32)
+        self.q3_eval = Network(num_layers+1, layers3, self.env).to(self.device).to(torch.float32)
 
         layers4 = [] 
         hidden_units = self.config.q4_hidden_units 
@@ -71,7 +73,7 @@ class CBPL:
             layers4.append([hidden_units, 'relu', hidden_units])
         layers4.append([hidden_units, 'linear', output_size])
 
-        self.q4_policy = Network(num_layers+1, layers4).to(self.device).to(torch.float32)
+        self.q4_policy = Network(num_layers+1, layers4, self.env).to(self.device).to(torch.float32)
 
     
     def update(self, avg_model, sample_model, input_dataset, t):
@@ -99,15 +101,15 @@ class CBPL:
     def run_single_iteration(self, t):
         # you need to prepare dataset 
         input_dataset = torch.cat((self.states, self.actions), dim=1)
-        cost = self.cost + self.lmda*self.constraints
+        cost = self.rewards + self.lmda*self.constraints
 
-        fqi_a = FQI(input_dataset, cost, self.dones, self.q1_policy)
+        fqi_a = FQI(input_dataset, cost, self.dones, self.q1_policy, self.config, self.wandb_run)
         fqi_a.train()
 
-        fqe_a = FQE(self.states, self.actions. self.rewards, self.dones, self.q1_policy, self.q2_eval)
+        fqe_a = FQE(self.states, self.actions. self.rewards, self.dones, self.q1_policy, self.q2_eval, self.wandb_run)
         fqe_a.train()
 
-        fqe_b = FQE(self.states, self.actions, self.constraints, self.dones, self.q1_policy, self.q3_eval)
+        fqe_b = FQE(self.states, self.actions, self.constraints, self.dones, self.q1_policy, self.q3_eval, self.wandb_run)
         fqe_b.train()
 
         self.update(self.q1_avg, self.q1_policy, input_dataset, t)
@@ -117,13 +119,13 @@ class CBPL:
         loss = self.lmda_avg - self.lmda
         self.lmda_avg = self.lmda_avg + (1/t)*loss
 
-        cost = self.cost + self.lmda_avg * self.constraints
-        fqi_b = FQI(input_dataset, cost, self.dones, self.q4_policy)
+        cost = self.rewards + self.lmda_avg * self.constraints
+        fqi_b = FQI(input_dataset, cost, self.dones, self.q4_policy, self.config, self.wandb_run)
 
-        fqe_c = FQE(self.states, self.actions. self.rewards, self.dones, self.q5_eval, self.q4_policy)
+        fqe_c = FQE(self.states, self.actions. self.rewards, self.dones, self.q5_eval, self.q4_policy, self.wandb_run)
         fqe_c.train()
 
-        fqe_d = FQE(self.states, self.actions, self.constraints, self.dones, self.q6_eval, self.q4_policy)
+        fqe_d = FQE(self.states, self.actions, self.constraints, self.dones, self.q6_eval, self.q4_policy, self.wandb_run)
         fqe_d.train()
 
         l_max = self.get_values(input_dataset, self.q2_eval) + self.lmda * max(self.get_values(input_dataset, self.q3_eval) - 0.1, 0)
@@ -134,19 +136,19 @@ class CBPL:
         if l_max - l_min <= 0.0001 :
             return self.q1_policy
 
-        wandb_run.log({"l_max", l_max})
-        wandb_run.log({"l_min", l_min})
+        self.wandb_run.log({"l_max", l_max})
+        self.wandb_run.log({"l_min", l_min})
 
     
     def run(self, t):
 
-        self.q1_avg = self.q1_policy.copy()
-        self.q2_avg = self.q2_eval.copy()
-        self.q3_avg = self.q3_eval.copy()
-        self.q4_avg = self.q4_policy.copy()
-        self.q5_eval = self.q1_policy.copy()
-        self.q6_eval = self.q1_policy.copy()
-        self.lmda_avg = self.lmda_avg.copy()
+        self.q1_avg = copy.deepcopy(self.q1_policy)
+        self.q2_avg = copy.deepcopy(self.q2_eval)
+        self.q3_avg = copy.deepcopy(self.q3_eval)
+        self.q4_avg = copy.deepcopy(self.q4_policy)
+        self.q5_eval = copy.deepcopy(self.q1_policy)
+        self.q6_eval = copy.deepcopy(self.q1_policy)
+        self.lmda_avg = copy.deepcopy(self.lmda)
 
         for i in range(t):
             self.run_single_iteration(i+1)

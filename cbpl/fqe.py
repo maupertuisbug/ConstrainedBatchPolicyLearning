@@ -49,7 +49,7 @@ class FQE:
                 losses.append(loss.item())
 
                 self.model.zero_grad()
-                loss.backward()
+                loss.backward(retain_graph=True)
                 self.model.optimizer.step()
             
             self.wandb.log({"loss" : np.mean(losses)})

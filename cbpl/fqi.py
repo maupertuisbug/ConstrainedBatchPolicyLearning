@@ -13,11 +13,12 @@ def one_hot(n, state):
     return vec 
 
 class FQI:
-    def __init__(self, input_dataset, cost, dones, model):
+    def __init__(self, input_dataset, cost, dones, model, config):
         self.input_dataset = input_dataset
         self.cost          = cost 
         self.dones         = dones 
         self.model         = model
+        self.config        = config
         
 
     def one_hot_to_state(one_hot_vector):
@@ -42,7 +43,7 @@ class FQI:
                 losses.append(loss.item())
 
                 self.model.zero_grad()
-                loss.backward()
+                loss.backward(retain_graph=True)
                 self.model.optimizer.step()
             
             self.wandb.log({"loss": np.mean(losses)})
