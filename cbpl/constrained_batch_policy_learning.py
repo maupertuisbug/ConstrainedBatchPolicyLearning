@@ -6,34 +6,36 @@ import numpy as np
 
 
 
+
 class CBPL:
-    def __init__(self, dataset, l1, B, learning_rate, env, config):
+    def __init__(self, dataset, B, learning_rate, env, config, wandb_run):
         self.dataset = dataset 
-        self.l1 = l1 
         self.bound = B 
         self.lr = learning_rate 
         self.lmda = torch.nn.Parameter(torch.full((1,), (B/1+1)))
         self.env = env
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.config = config
+        self.wandb_run = wandb_run
 
         # You need to initialise the dataset such that rewards and cost from constraints 
         states, actions, next_states, rewards, constraints, dones = zip(*self.dataset)
 
         self.states = torch.tensor(np.array(states), dtype=torch.float32, device=self.device)
         self.actions = torch.tensor(np.array(actions), dtype=torch.float32, device=self.device)
-        self.next_states = torch.tensor(np.array(next_states), dtype=torch.float3, device=self.device)
+        self.next_states = torch.tensor(np.array(next_states), dtype=torch.float32, device=self.device)
         self.rewards = torch.tensor(np.array(rewards), dtype=torch.float32, device=self.device)
         self.constraints = torch.tensor(np.array(constraints), dtype=torch.float32, device=self.device)
         self.dones  = torch.tensor(np.array(dones), dtype=torch.float32, device=self.device)
 
-    def initialize_q_functions(self, config):
+    def initialize_q_functions(self):
 
         input_size = self.env.observation_space.n + self.env.action_space.n 
         output_size = 1 
 
         layers1 = [] 
-        hidden_units = config.q1_hidden_units 
-        num_layers   = config.q1_num_layers
+        hidden_units = self.config.q1_hidden_units 
+        num_layers   = self.config.q1_num_layers
         layers1.append([input_size, 'relu', hidden_units])
         for layer in range(num_layers-1):
             layers1.append([hidden_units, 'relu', hidden_units])
@@ -42,8 +44,8 @@ class CBPL:
         self.q1_policy = Network(num_layers+1, layers1).to(self.device).to(torch.float32)
 
         layers2 = [] 
-        hidden_units = config.q2_hidden_units 
-        num_layers   = config.q2_num_layers
+        hidden_units = self.config.q2_hidden_units 
+        num_layers   = self.config.q2_num_layers
         layers2.append([input_size, 'relu', hidden_units])
         for layer in range(num_layers-1):
             layers2.append([hidden_units, 'relu', hidden_units])
@@ -52,8 +54,8 @@ class CBPL:
         self.q2_eval = Network(num_layers+1, layers2).to(self.device).to(torch.float32)
 
         layers3 = [] 
-        hidden_units = config.q3_hidden_units 
-        num_layers   = config.q3_num_layers
+        hidden_units = self.config.q3_hidden_units 
+        num_layers   = self.config.q3_num_layers
         layers3.append([input_size, 'relu', hidden_units])
         for layer in range(num_layers-1):
             layers3.append([hidden_units, 'relu', hidden_units])
@@ -62,8 +64,8 @@ class CBPL:
         self.q3_eval = Network(num_layers+1, layers3).to(self.device).to(torch.float32)
 
         layers4 = [] 
-        hidden_units = config.q4_hidden_units 
-        num_layers   = config.q4_num_layers
+        hidden_units = self.config.q4_hidden_units 
+        num_layers   = self.config.q4_num_layers
         layers4.append([input_size, 'relu', hidden_units])
         for layer in range(num_layers-1):
             layers4.append([hidden_units, 'relu', hidden_units])
@@ -78,7 +80,7 @@ class CBPL:
         loader = DataLoader(dataset, batch_size=128, shuffle=True)
 
         for batch in loader:
-            loss = (1/t)[sample_model(batch) - avg_model(batch)]
+            loss = float(1/t)*[sample_model(batch) - avg_model(batch)]
             avg_model.zero_grad()
             loss.backward()
             avg_model.optimizer()
@@ -129,24 +131,11 @@ class CBPL:
 
         l_min = self.get_values(input_dataset, self.q5_eval) + self.lmda_avg * max(self.get_values(input_dataset, self.q6_eval) - 0.1, 0)
 
-        if l_max - l_min <= w :
+        if l_max - l_min <= 0.0001 :
             return self.q1_policy
 
-        
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
+        wandb_run.log({"l_max", l_max})
+        wandb_run.log({"l_min", l_min})
 
     
     def run(self, t):
@@ -160,7 +149,7 @@ class CBPL:
         self.lmda_avg = self.lmda_avg.copy()
 
         for i in range(t):
-            self.run_single_iteration()
+            self.run_single_iteration(i+1)
         
 
 

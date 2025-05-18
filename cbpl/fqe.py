@@ -34,9 +34,10 @@ class FQE:
         loader  = DataLoader(dataset, batch_size=128, shuffle=True)
         losses = [] 
         num_iterations = 100 
+        gamma = 0.99
 
         for i in range(num_iterations):
-            for states, actions, cost, dones in loader:
+            for states, actions, reward_batch, done_batch in loader:
                 # for optimal policy 
                 action_eval = self.policy_eval.get_best_action_batch(states)
                 # prepare the new dataset 

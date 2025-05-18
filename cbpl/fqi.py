@@ -4,6 +4,7 @@ import gym
 
 from networks.network import Network
 from torch.utils.data import TensorDataset, DataLoader
+from env.frozen_lake import FrozenLakeEnv
 
 
 def one_hot(n, state):
@@ -27,7 +28,7 @@ class FQI:
 
         dataset = TensorDataset(self.input_dataset, self.cost, self.dones)
         loader = DataLoader(dataset, batch_size=128, shuffle=True)
-        print("Input dataset shape: ", input_dataset.shape)
+        print("Input dataset shape: ", self.input_dataset.shape)
         losses = []
         for i in range(self.config.num_iterations):
             for input_batch, reward_batch, done_batch in loader:
@@ -48,9 +49,9 @@ class FQI:
 
     def evaluate(self):
 
-        env = gym.make('FrozenLake-v1', desc=None, is_slippery=False)
+        env = gym.make('FQEFrozenLake-v1', desc=None, is_slippery=False)
         for episodes in range(self.config.evaluation_episodes):
-            state = env.reset()
+            state, _ = env.reset()
             state_n = env.observation_space.n 
             action_n = env.action_space.n
             done = False 
