@@ -3,8 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import wandb
 import pickle
+from env.frozen_lake import FrozenLakeEnv
 
-env = gym.make("FrozenLake-v1", is_slippery=True)
+env = gym.make("FQEFrozenLake-v1", is_slippery=True)
 
 wandb_run = wandb.init(project="fitted q_function")
 
@@ -33,7 +34,7 @@ def one_hot(n, state):
 
 for episode in range(episodes):
 
-    state = env.reset()
+    state, _ = env.reset()
     state_n = env.observation_space.n 
     action_n = env.action_space.n
     total_reward = 0 
@@ -46,7 +47,7 @@ for episode in range(episodes):
         else :
             action = np.argmax(q_table[state])
         
-        next_state, reward, terminated, _ = env.step(action)
+        next_state, reward, terminated, cost = env.step(action)
         done = terminated 
 
         old_q_value = q_table[state, action]
@@ -55,7 +56,7 @@ for episode in range(episodes):
         q_table[state, action] = old_q_value + alpha * (reward + gamma * next_max - old_q_value)
 
         if episode > 70000:
-            dataset.append((one_hot(state_n, state), one_hot(action_n, action), one_hot(state_n, next_state), reward, done))
+            dataset.append((one_hot(state_n, state), one_hot(action_n, action), one_hot(state_n, next_state), reward, cost, done))
 
         state = next_state 
         total_reward += reward 
@@ -73,20 +74,20 @@ with open('frozenlake_qldataset.pkl', 'wb') as f:
 print("Dataset saved to frozenlake_qldataset.pkl")
 
 
-state = env.reset()
+state, _ = env.reset()
 epsilon = 1.0
 done = False 
 rewards =  []
 total_reward = 0 
 evaluation_episodes = 1000
 for episode in range(evaluation_episodes):
-    state = env.reset()
+    state, _ = env.reset()
     done = False 
     total_reward = 0 
     while not done :
         action = np.argmax(q_table[state])
         
-        next_state, reward, terminated, _ = env.step(action)
+        next_state, reward, terminated, cost = env.step(action)
         done = terminated
         state  = next_state
         total_reward += reward 

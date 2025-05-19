@@ -11,7 +11,7 @@ max_steps = 100
 
 
 for episode in range(n_episodes):
-    state = env.reset()
+    state, _ = env.reset()
     done = False 
 
     for _ in range(max_steps):
