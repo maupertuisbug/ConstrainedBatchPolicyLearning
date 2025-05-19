@@ -14,7 +14,7 @@ def one_hot(n, state):
 
 
 class FQE:
-    def __init__(self, states, actions, cost, dones, policy_eval, model):
+    def __init__(self, states, actions, cost, dones, policy_eval, model, wandb_run):
 
         self.states = states
         self.actions  = actions
@@ -22,6 +22,7 @@ class FQE:
         self.dones         = dones 
         self.policy_eval   = policy_eval
         self.model         = model
+        self.wandb_run     = wandb_run
 
     
     def one_hot_to_state(one_hot_vector):
@@ -33,7 +34,7 @@ class FQE:
         dataset = TensorDataset(self.states, self.actions, self.cost, self.dones)
         loader  = DataLoader(dataset, batch_size=128, shuffle=True)
         losses = [] 
-        num_iterations = 100 
+        num_iterations = 1 
         gamma = 0.99
 
         for i in range(num_iterations):
@@ -52,4 +53,4 @@ class FQE:
                 loss.backward(retain_graph=True)
                 self.model.optimizer.step()
             
-            self.wandb.log({"loss" : np.mean(losses)})
+            self.wandb_run.log({"loss-eval" : np.mean(losses)})

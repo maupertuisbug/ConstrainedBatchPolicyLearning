@@ -36,6 +36,7 @@ class Network(torch.nn.Module):
         self.model = torch.nn.Sequential(*self.layers)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
         self.env = env 
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, x):
         network_output = self.model(x)
@@ -56,7 +57,7 @@ class Network(torch.nn.Module):
 
         batch_size = x.shape[0]
         n_actions = self.env.action_space.n
-        actions_one_hot = torch.eye(n_actions)
+        actions_one_hot = torch.eye(n_actions, device=self.device)
         
         x_expanded = x.unsqueeze(1).repeat(1, n_actions, 1)
         actions_expanded = actions_one_hot.unsqueeze(0).repeat(batch_size, 1, 1)
@@ -68,7 +69,7 @@ class Network(torch.nn.Module):
         q_values       = q_values.view(batch_size, n_actions)
 
         best_action_indices = torch.argmax(q_values, dim=1)
-        best_actions        = torch.nn.functional.one_hot(best_action_indices, num_classes=n_actions).float32()
+        best_actions        = torch.nn.functional.one_hot(best_action_indices, num_classes=n_actions)
 
         return best_actions
 

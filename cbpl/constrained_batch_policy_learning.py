@@ -82,7 +82,7 @@ class CBPL:
         loader = DataLoader(dataset, batch_size=128, shuffle=True)
 
         for batch in loader:
-            loss = float(1/t)*[sample_model(batch) - avg_model(batch)]
+            loss = float(1/t)*[sample_model(batch[0]) - avg_model(batch[0])]
             avg_model.zero_grad()
             loss.backward()
             avg_model.optimizer()
@@ -106,7 +106,7 @@ class CBPL:
         fqi_a = FQI(input_dataset, cost, self.dones, self.q1_policy, self.config, self.wandb_run)
         fqi_a.train()
 
-        fqe_a = FQE(self.states, self.actions. self.rewards, self.dones, self.q1_policy, self.q2_eval, self.wandb_run)
+        fqe_a = FQE(self.states, self.actions, self.rewards, self.dones, self.q1_policy, self.q2_eval, self.wandb_run)
         fqe_a.train()
 
         fqe_b = FQE(self.states, self.actions, self.constraints, self.dones, self.q1_policy, self.q3_eval, self.wandb_run)
