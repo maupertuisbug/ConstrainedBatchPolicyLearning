@@ -20,7 +20,7 @@ parameters :
   q4_hidden_units : 
     values : [64]
   num_iterations :
-    values : [1]
+    values : [100]
   evaluation_episodes :
     values : [1000]
   gamma :

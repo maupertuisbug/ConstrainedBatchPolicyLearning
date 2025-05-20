@@ -14,7 +14,7 @@ n_states = env.observation_space.n
 n_actions = env.action_space.n 
 q_table  = np.zeros((n_states, n_actions))
 
-alpha = 0.67 
+alpha = 0.99 
 gamma = 0.95 
 epsilon = 1.0 
 epsilon_decay = 0.998 
@@ -55,7 +55,7 @@ for episode in range(episodes):
 
         q_table[state, action] = old_q_value + alpha * (reward + gamma * next_max - old_q_value)
 
-        if episode > 70000:
+        if episode > 75000:
             dataset.append((one_hot(state_n, state), one_hot(action_n, action), one_hot(state_n, next_state), reward, cost, done))
 
         state = next_state 
