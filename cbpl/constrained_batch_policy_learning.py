@@ -82,10 +82,11 @@ class CBPL:
         loader = DataLoader(dataset, batch_size=128, shuffle=True)
 
         for batch in loader:
-            loss = float(1/t)*[sample_model(batch[0]) - avg_model(batch[0])]
+            loss = torch.mean(sample_model(batch[0]) - avg_model(batch[0]))
+            loss = loss/t
             avg_model.zero_grad()
             loss.backward()
-            avg_model.optimizer()
+            avg_model.optimizer.step()
 
     def get_values(self, input_dataset, model):
 
@@ -93,8 +94,9 @@ class CBPL:
         loader   = DataLoader(dataset, batch_size=128, shuffle=True)
         value = []
         for batch in loader:
-            value.append(model(batch))
-        
+            if batch[0].shape[0] == 128:
+                value.append(model(batch[0]))
+    
         value = torch.mean(torch.stack(value))
         return value
 
@@ -103,13 +105,13 @@ class CBPL:
         input_dataset = torch.cat((self.states, self.actions), dim=1)
         cost = self.rewards + self.lmda*self.constraints
 
-        fqi_a = FQI(input_dataset, cost, self.dones, self.q1_policy, self.config, self.wandb_run)
+        fqi_a = FQI(input_dataset, cost, self.dones, self.q1_policy, self.config, self.wandb_run, "fqi_a")
         fqi_a.train()
 
-        fqe_a = FQE(self.states, self.actions, self.rewards, self.dones, self.q1_policy, self.q2_eval, self.wandb_run)
+        fqe_a = FQE(self.states, self.actions, self.rewards, self.dones, self.q1_policy, self.q2_eval, self.wandb_run, "fqe_a")
         fqe_a.train()
 
-        fqe_b = FQE(self.states, self.actions, self.constraints, self.dones, self.q1_policy, self.q3_eval, self.wandb_run)
+        fqe_b = FQE(self.states, self.actions, self.constraints, self.dones, self.q1_policy, self.q3_eval, self.wandb_run, "fqe_b")
         fqe_b.train()
 
         self.update(self.q1_avg, self.q1_policy, input_dataset, t)
@@ -117,15 +119,15 @@ class CBPL:
         self.update(self.q3_avg, self.q3_eval, input_dataset, t)
 
         loss = self.lmda_avg - self.lmda
-        self.lmda_avg = self.lmda_avg + (1/t)*loss
+        self.lmda_avg = self.lmda_avg + (loss/t)
 
         cost = self.rewards + self.lmda_avg * self.constraints
-        fqi_b = FQI(input_dataset, cost, self.dones, self.q4_policy, self.config, self.wandb_run)
+        fqi_b = FQI(input_dataset, cost, self.dones, self.q4_policy, self.config, self.wandb_run, "fqi_b")
 
-        fqe_c = FQE(self.states, self.actions. self.rewards, self.dones, self.q5_eval, self.q4_policy, self.wandb_run)
+        fqe_c = FQE(self.states, self.actions, self.rewards, self.dones, self.q5_eval, self.q4_policy, self.wandb_run, "fqe_c")
         fqe_c.train()
 
-        fqe_d = FQE(self.states, self.actions, self.constraints, self.dones, self.q6_eval, self.q4_policy, self.wandb_run)
+        fqe_d = FQE(self.states, self.actions, self.constraints, self.dones, self.q6_eval, self.q4_policy, self.wandb_run, "fqe_d")
         fqe_d.train()
 
         l_max = self.get_values(input_dataset, self.q2_eval) + self.lmda * max(self.get_values(input_dataset, self.q3_eval) - 0.1, 0)
@@ -133,7 +135,8 @@ class CBPL:
 
         l_min = self.get_values(input_dataset, self.q5_eval) + self.lmda_avg * max(self.get_values(input_dataset, self.q6_eval) - 0.1, 0)
 
-        if l_max - l_min <= 0.0001 :
+        if l_max - l_min <= 0.00001 :
+            self.wandb_run.log({"Empirical Primal-Dual Gap " : (l_max - l_min)})
             return self.q1_policy
 
         self.wandb_run.log({"l_max", l_max})

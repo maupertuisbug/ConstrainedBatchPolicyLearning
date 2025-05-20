@@ -13,13 +13,14 @@ def one_hot(n, state):
     return vec 
 
 class FQI:
-    def __init__(self, input_dataset, cost, dones, model, config, wandb_run):
+    def __init__(self, input_dataset, cost, dones, model, config, wandb_run, name):
         self.input_dataset = input_dataset
         self.cost          = cost 
         self.dones         = dones 
         self.model         = model
         self.config        = config
         self.wandb_run     = wandb_run
+        self.name          = name
         
 
     def one_hot_to_state(one_hot_vector):
@@ -33,6 +34,7 @@ class FQI:
         print("Input dataset shape: ", self.input_dataset.shape)
         losses = []
         for i in range(self.config.num_iterations):
+            losses = []
             for input_batch, reward_batch, done_batch in loader:
                 q_values = self.model(input_batch)
                 reward_batch = reward_batch.unsqueeze(1)
@@ -47,7 +49,7 @@ class FQI:
                 loss.backward(retain_graph=True)
                 self.model.optimizer.step()
             
-            self.wandb_run.log({"loss": np.mean(losses)})
+            self.wandb_run.log({self.name+"loss": np.mean(losses)})
 
     def evaluate(self):
 
