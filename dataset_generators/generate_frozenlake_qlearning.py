@@ -55,7 +55,7 @@ for episode in range(episodes):
 
         q_table[state, action] = old_q_value + alpha * (reward + gamma * next_max - old_q_value)
 
-        if episode > 75000:
+        if episode > 78000:
             dataset.append((one_hot(state_n, state), one_hot(action_n, action), one_hot(state_n, next_state), reward, cost, done))
 
         state = next_state 

@@ -31,7 +31,7 @@ def run_exp():
 
     cbpl = CBPL(loaded_dataset, B, lr, env, config, wandb_run)
     cbpl.initialize_q_functions()
-    cbpl.run(1000)
+    cbpl.run(50)
 
 
 
