@@ -6,27 +6,26 @@ $$
 \begin{aligned}
 \text{minimize} \quad & f(x) \\
 \text{subject to} \quad & g_i(x) \leq 0, \quad i = 1, \dots, m \\
-& h_j(x) = 0, \quad j = 1, \dots, p
 \end{aligned}
 $$
 
 The Lagrangian is defined as:
 
 $$
-\mathcal{L}(x, \lambda, \nu) = f(x) + \sum_{i=1}^m \lambda_i g_i(x) + \sum_{j=1}^p \nu_j h_j(x)
+\mathcal{L}(x, \lambda, \nu) = f(x) + \sum_{i=1}^m \lambda_i g_i(x)
 $$
 
 The Lagrangian dual function is:
 
 $$
-g(\lambda, \nu) = \inf_x \mathcal{L}(x, \lambda, \nu)
+g(\lambda, \nu) = \inf_x \mathcal{L}(x, \lambda)
 $$
 
 The Lagrangian dual problem becomes:
 
 $$
 \begin{aligned}
-\text{maximize} \quad & g(\lambda, \nu) \\
+\text{maximize} \quad & g(\lambda) \\
 \text{subject to} \quad & \lambda \geq 0
 \end{aligned}
 $$
