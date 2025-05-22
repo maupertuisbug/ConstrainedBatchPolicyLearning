@@ -34,9 +34,15 @@ class Network(torch.nn.Module):
             self.layers.append(activation_fn)
         print(self.layers)
         self.model = torch.nn.Sequential(*self.layers)
+        self.model.apply(init_weights)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
         self.env = env 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def init_weights(m):
+        if isinstance(m, mm.Linear):
+            nn.init.xavier_uniform_(m.weight)
+            nn.init.zeros_(m.bias)
 
     def forward(self, x):
         network_output = self.model(x)

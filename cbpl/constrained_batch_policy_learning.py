@@ -143,9 +143,9 @@ class CBPL:
 
         if l_max - l_min <= 0.0001 :
             return self.q1_policy
-        self.wandb_run.log({"Empirical Primal-Dual Gap " : (l_max - l_min)})
-        self.wandb_run.log({"L Max " : l_max})
-        self.wandb_run.log({"L_Min " : l_min})
+        self.wandb_run.log({"Empirical Primal-Dual Gap " : (l_max - l_min)}, step=t)
+        self.wandb_run.log({"L Max " : l_max},  step=t)
+        self.wandb_run.log({"L_Min " : l_min},  step=t)
 
     
     def run(self, t):
