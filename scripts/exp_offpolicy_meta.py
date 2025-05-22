@@ -26,7 +26,7 @@ def run_exp():
     
     env = gym.make('FQEFrozenLake-v1', desc=None, is_slippery=False)
 
-    lr = 0.001
+    lr = 0.01
     B  = 0.5 
 
     cbpl = CBPL(loaded_dataset, B, lr, env, config, wandb_run)

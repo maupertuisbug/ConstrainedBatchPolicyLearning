@@ -85,7 +85,7 @@ class CBPL:
             loss = torch.mean(sample_model(batch[0]) - avg_model(batch[0]))
             loss = loss/t
             avg_model.zero_grad()
-            loss.backward()
+            loss.backward(retain_graph=True)
             avg_model.optimizer.step()
 
     def get_values(self, input_dataset, model):
@@ -115,7 +115,13 @@ class CBPL:
         fqe_b.train()
 
         self.update(self.q1_avg, self.q1_policy, input_dataset, t)
+
+        # q2_avg_before = {name : p.clone() for name, p in self.q2_avg.named_parameters()}
         self.update(self.q2_avg, self.q2_eval, input_dataset, t)
+        # for name, p in self.q2_avg.named_parameters():
+        #     if not torch.equal(p, q2_avg_before[name]):
+        #         print(f"Parameter '{name}' was updated")
+
         self.update(self.q3_avg, self.q3_eval, input_dataset, t)
 
         loss = self.lmda_avg - self.lmda
@@ -124,20 +130,22 @@ class CBPL:
         cost = self.rewards + self.lmda_avg * self.constraints
         fqi_b = FQI(input_dataset, cost, self.dones, self.q4_policy, self.config, self.wandb_run, "fqi_b")
 
-        fqe_c = FQE(self.states, self.actions, self.rewards, self.dones, self.q5_eval, self.q4_policy, self.wandb_run, "fqe_c")
+        fqe_c = FQE(self.states, self.actions, self.rewards, self.dones, self.q4_policy, self.q5_eval, self.wandb_run, "fqe_c")
         fqe_c.train()
 
-        fqe_d = FQE(self.states, self.actions, self.constraints, self.dones, self.q6_eval, self.q4_policy, self.wandb_run, "fqe_d")
+        fqe_d = FQE(self.states, self.actions, self.constraints, self.dones, self.q4_policy, self.q6_eval, self.wandb_run, "fqe_d")
         fqe_d.train()
 
-        l_max = self.get_values(input_dataset, self.q2_eval) + self.lmda * max(self.get_values(input_dataset, self.q3_eval) - 0.1, 0)
+        l_max = self.get_values(input_dataset, self.q2_avg) + self.lmda * max(self.get_values(input_dataset, self.q3_avg) - 0.1, 0)
         l_max = self.lmda + self.lr * l_max 
 
         l_min = self.get_values(input_dataset, self.q5_eval) + self.lmda_avg * max(self.get_values(input_dataset, self.q6_eval) - 0.1, 0)
 
-        if l_max - l_min <= 0.00001 :
+        if l_max - l_min <= 0.0001 :
             return self.q1_policy
         self.wandb_run.log({"Empirical Primal-Dual Gap " : (l_max - l_min)})
+        self.wandb_run.log({"L Max " : l_max})
+        self.wandb_run.log({"L_Min " : l_min})
 
     
     def run(self, t):
