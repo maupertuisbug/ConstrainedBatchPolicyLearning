@@ -35,7 +35,7 @@ class FQE:
         dataset = TensorDataset(self.states, self.actions, self.cost, self.dones)
         loader  = DataLoader(dataset, batch_size=128, shuffle=True)
         losses = [] 
-        num_iterations = 100 
+        num_iterations = 200 
         gamma = 0.99
 
         for i in range(num_iterations):
@@ -57,4 +57,4 @@ class FQE:
                 loss.backward(retain_graph=True)
                 self.model.optimizer.step()
             
-            self.wandb_run.log({self.name+"loss-eval" : np.mean(losses)})
+            self.wandb_run.log({self.name+"_loss-eval" : np.mean(losses)})
