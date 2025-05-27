@@ -57,4 +57,4 @@ class FQE:
                 loss.backward(retain_graph=True)
                 self.model.optimizer.step()
             
-            self.wandb_run.log({self.name+"_loss-eval" : np.mean(losses)})
+        self.wandb_run.log({self.name+"_loss-eval" : np.mean(losses)})

@@ -1,5 +1,6 @@
 import torch 
 import numpy as np
+import torch.nn as nn
 
 
 
@@ -12,6 +13,11 @@ def one_hot(n, state):
     vec  = np.zeros(n)
     vec[state] = 1
     return vec 
+
+def init_weights(m):
+    if isinstance(m, nn.Linear):
+        nn.init.xavier_uniform_(m.weight)
+        nn.init.zeros_(m.bias)
 
 class Network(torch.nn.Module):
     def __init__(self, num_layers, layer_input, env):
@@ -34,6 +40,7 @@ class Network(torch.nn.Module):
             self.layers.append(activation_fn)
         print(self.layers)
         self.model = torch.nn.Sequential(*self.layers)
+        self.model.apply(init_weights)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
         self.env = env 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -80,13 +80,19 @@ class CBPL:
 
         dataset = TensorDataset(input_dataset) 
         loader = DataLoader(dataset, batch_size=128, shuffle=True)
+        cals = []
 
-        for batch in loader:
-            loss = torch.mean(sample_model(batch[0]) - avg_model(batch[0]))
-            loss = loss/t
-            avg_model.zero_grad()
-            loss.backward(retain_graph=True)
-            avg_model.optimizer.step()
+        for batch in loader :
+            if batch[0].shape[0] == 128:
+                value = avg_model(batch[0])
+                target = sample_model(batch[0])
+                cals.append((value-target))
+        
+        loss = torch.mean(torch.stack(cals))
+        loss = -100.0*loss/t
+        avg_model.zero_grad()
+        loss.backward(retain_graph=True)
+        avg_model.optimizer.step()
 
     def get_values(self, input_dataset, model):
 
@@ -141,8 +147,12 @@ class CBPL:
 
         l_min = self.get_values(input_dataset, self.q5_eval) + self.lmda_avg * max(self.get_values(input_dataset, self.q6_eval) - 0.1, 0)
 
-        if l_max - l_min <= 0.0001 :
+        if l_max - l_min <= 0.000001 :
+            self.wandb_run.log({"Empirical Primal-Dual Gap " : (l_max - l_min)})
+            self.wandb_run.log({"L Max " : l_max})
+            self.wandb_run.log({"L_Min " : l_min})
             return self.q1_policy
+        
         self.wandb_run.log({"Empirical Primal-Dual Gap " : (l_max - l_min)})
         self.wandb_run.log({"L Max " : l_max})
         self.wandb_run.log({"L_Min " : l_min})

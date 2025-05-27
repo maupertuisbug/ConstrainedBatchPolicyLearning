@@ -49,7 +49,7 @@ class FQI:
                 loss.backward(retain_graph=True)
                 self.model.optimizer.step()
             
-            self.wandb_run.log({self.name+"_loss": np.mean(losses)})
+        self.wandb_run.log({self.name+"_loss": np.mean(losses)})
 
     def evaluate(self):
 
@@ -70,7 +70,7 @@ class FQI:
                 state = next_state
                 if done :
                     break
-            self.wandb_run.log({"total_reward": total_reward})
+            self.wandb_run.log({"total_reward": total_reward},  step=episodes)
 
         
 
