@@ -127,9 +127,11 @@ class FrozenLakeEnv(Env):
             newrow, newcol = inc(row, col, action)
             new_state = to_s(newrow, newcol)
             newletter = desc[newrow, newcol]
-            terminated = bytes(newletter) in b"GH"
+            terminated = bytes(newletter) in b"G"
             reward = float(newletter == b"G")
-            cost = 1.0 - float(newletter == b"H")
+            cost =  float(newletter == b"H")
+            if cost == 1.0 : 
+                cost = -cost
             return new_state, reward, cost, terminated
         
         for row in range(nrow):
@@ -139,9 +141,9 @@ class FrozenLakeEnv(Env):
                     li = self.P[s][a]
                     letter = desc[row, col]
                     if letter in b"G":
-                        li.append((1.0, s, 0, True))
+                        li.append((1.0, s, 0, 0, True))
                     elif letter in b"H":
-                        li.append((-1.0, s, 0, True))
+                        li.append((1.0, *update_probability_matrix(row, col, a)))
                     else :
                         if is_slippery :
                             for b in [(a-1)%4 , a, (a+1)%4]:
