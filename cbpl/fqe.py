@@ -56,6 +56,5 @@ class FQE:
                 self.model.zero_grad()
                 loss.backward(retain_graph=True)
                 self.model.optimizer.step()
-                break
             
         self.wandb_run.log({self.name+"_loss-eval" : np.mean(losses)})
