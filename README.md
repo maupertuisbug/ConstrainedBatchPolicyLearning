@@ -32,4 +32,4 @@ $$
 
 
 For the experiments in this code, my goal is to show that the primal dual gap reduces as the optimization is done. The following plot shows how the empirical dual gap reduces  :
-![Empirical dual gap](imgs/dual gap.png)
+![Empirical dual gap]([imgs/dual gap.png](https://github.com/maupertuisbug/ConstrainedBatchPolicyLearning/blob/main/imgs/dual%20gap.png))
