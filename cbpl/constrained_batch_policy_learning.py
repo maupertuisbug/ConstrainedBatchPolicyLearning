@@ -89,7 +89,7 @@ class CBPL:
                 cals.append((value-target))
         
         loss = torch.mean(torch.stack(cals))
-        loss = -100.0*loss/t
+        loss = -1000.0*loss/t
         avg_model.zero_grad()
         loss.backward(retain_graph=True)
         avg_model.optimizer.step()
@@ -109,7 +109,7 @@ class CBPL:
     def run_single_iteration(self, t):
         # you need to prepare dataset 
         input_dataset = torch.cat((self.states, self.actions), dim=1)
-        cost = self.rewards + self.lmda*self.constraints
+        cost = self.rewards - self.lmda*self.constraints
 
         fqi_a = FQI(input_dataset, cost, self.dones, self.q1_policy, self.config, self.wandb_run, "fqi_a")
         fqi_a.train()
@@ -133,7 +133,7 @@ class CBPL:
         loss = self.lmda_avg - self.lmda
         self.lmda_avg = self.lmda_avg + (loss/t)
 
-        cost = self.rewards + self.lmda_avg * self.constraints
+        cost = self.rewards - self.lmda_avg * self.constraints
         fqi_b = FQI(input_dataset, cost, self.dones, self.q4_policy, self.config, self.wandb_run, "fqi_b")
 
         fqe_c = FQE(self.states, self.actions, self.rewards, self.dones, self.q4_policy, self.q5_eval, self.wandb_run, "fqe_c")
@@ -157,6 +157,7 @@ class CBPL:
         self.wandb_run.log({"L Max " : l_max})
         self.wandb_run.log({"L_Min " : l_min})
 
+        self.lmda = (max(0, self.lmda)/(1.9))
     
     def run(self, t):
 
